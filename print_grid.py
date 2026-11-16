@@ -1,23 +1,36 @@
-import requests
-from bs4 import BeautifulSoup
+import urllib.request
+
+
+def remove_tags(text):
+    # go through the text one letter at a time and skip anything inside < >
+    result = ""
+    inside_tag = False
+    for letter in text:
+        if letter == "<":
+            inside_tag = True
+        elif letter == ">":
+            inside_tag = False
+        elif inside_tag == False:
+            result = result + letter
+    return result.strip()
 
 
 def print_grid(url):
-    # get the web page
-    response = requests.get(url)
-    response.encoding = "utf-8"
-    page = BeautifulSoup(response.text, "html.parser")
+    # get the web page as text
+    response = urllib.request.urlopen(url)
+    page = response.read().decode("utf-8")
 
-    # find all the rows in the table
-    rows = page.find_all("tr")
+    # split the page into table rows
+    rows = page.split("</tr>")  # each row ends with </tr>
 
     # save each character and its x and y in a list
     data = []
-    for row in rows[1:]:  # skip the first row because it is the header
-        cells = row.find_all("td")
-        x = int(cells[0].text)
-        character = cells[1].text
-        y = int(cells[2].text)
+    # skip the first piece (the header row) and the last piece (the page after the table)
+    for row in rows[1:-1]:
+        cells = row.split("</td>")  # each cell ends with </td>
+        x = int(remove_tags(cells[0]))
+        character = remove_tags(cells[1])
+        y = int(remove_tags(cells[2]))
         data.append([x, character, y])
 
     # find the biggest x and y so we know how big the grid is
